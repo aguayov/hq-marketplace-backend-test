@@ -16,7 +16,7 @@ config();
 // Setting up the actual server
 const app = express();
 const server = new Server(app);
-const dbClient = instantiateDB();
+
 // allow client ip from x-forwarded-for header
 app.set('trust proxy', true);
 
@@ -30,10 +30,17 @@ app.use(bodyParser.urlencoded({ extended: false }));
 if (process.env.NODE_ENV !== 'testing') {
   // Set the public directory
   app.use(express.static('public'));
-}
 
-// Run router function to launch endpoints
-app.use(router(dbClient));
+  const dbClient = instantiateDB()
+    .then((res) => {
+      app.use(router(res));
+    })
+    .catch((error) => {
+      console.error('Application error:', error);
+    });
+
+  dbClient;
+}
 
 // prioritize environment variables
 const port = process.env.PORT ? parseInt(process.env.PORT) : 8000;
