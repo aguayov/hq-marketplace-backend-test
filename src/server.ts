@@ -26,6 +26,7 @@ app.use(helmet.frameguard({ action: 'SAMEORIGIN' }));
 app.use(cors({ origin: true, credentials: true }));
 app.use(compression());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
 
 if (process.env.NODE_ENV !== 'testing') {
   // Set the public directory
