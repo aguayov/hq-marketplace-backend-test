@@ -2,6 +2,27 @@ import validateProduct from './queries/validateProducts';
 import registerOrder from './queries/registerOrder';
 import registerOrderProducts from './queries/registerOrderItems';
 
+/**
+ * Appends a location ID to an array of objects.
+ *
+ * This function iterates through an array of objects and appends a specified location ID
+ * to each object by adding a 'location_id' property.
+ *
+ * @param {Array<Object>} rows - The array of objects to which the location ID will be appended.
+ * @param {string} value - The location ID to be appended to each object.
+ * @returns {void}
+ *
+ * @example
+ * const items = [
+ *   { name: 'Product A', price: 10 },
+ *   { name: 'Product B', price: 20 }
+ * ];
+ * const locationId = 'L123';
+ * appendLocationID(items, locationId);
+ *
+ * // Now, each object in 'items' will have a 'location_id' property set to 'L123'.
+ */
+
 const appendLocationID = (rows: any, value: string) => {
   rows.forEach((obj: any) => {
     obj['location_id'] = value;
@@ -30,6 +51,29 @@ interface cart {
   quantity: number;
 }
 
+/**
+ * Validates the items in a cart against the database.
+ *
+ * This function takes an array of cart items and validates each item against the database.
+ * It queries the database to ensure that each item's vendor, location, and product are valid.
+ *
+ * @param {cart[]} cart - An array of cart items to be validated.
+ * @param {any} db - The database connection or client used for querying.
+ * @returns {Promise<boolean>} A Promise that resolves to a boolean indicating whether all items are valid.
+ *
+ * @throws {Error} If there is an error during validation.
+ *
+ * @example
+ * const cartItems = [
+ *   { vendor_id: 1, location_id: 101, id: 1001 },
+ *   { vendor_id: 2, location_id: 102, id: 2002 }
+ * ];
+ * const dbConnection = // ... establish database connection
+ *
+ * const isValid = await validateCartItems(cartItems, dbConnection);
+ * console.log(isValid); // true if all items are valid, false otherwise
+ */
+
 const validateCartItems = async (cart: cart[], db: any) => {
   try {
     const promises: Promise<any>[] = [];
@@ -47,6 +91,25 @@ const validateCartItems = async (cart: cart[], db: any) => {
     return false;
   }
 };
+
+/**
+ * Validates the content of SQL query responses.
+ *
+ * This function validates the content of SQL query responses to ensure that each query
+ * contains atleast 1 row in the response
+ *
+ * @param {any[]} responses - An array of SQL query responses to be validated.
+ * @returns {boolean} A boolean indicating whether the given query actually returned a value
+ *
+ * @example
+ * const sqlResponses = [
+ *   { rows: [{ id: 1, name: 'Product A' }] },
+ *   { rows: [{ id: 2, name: 'Product B' }] }
+ * ];
+ *
+ * const isValid = validateSQLRowContent(sqlResponses);
+ * console.log(isValid); // true if all rows have non-empty values, false otherwise
+ */
 
 const validateSQLRowContent = (responses: any) => {
   for (const response of responses) {
@@ -67,10 +130,61 @@ const validateSQLRowContent = (responses: any) => {
   return true;
 };
 
+/**
+ * Registers an order in the database.
+ *
+ * This function registers an order by inserting order details into the database.
+ *
+ * @param {orderType} ordertype - An object containing order details including id, customer name, total, and location id.
+ * @param {any} db - The database connection or client used for querying.
+ * @returns {Promise<void>} A Promise that resolves when the order is successfully registered.
+ *
+ * @throws {Error} If there is an error during order registration.
+ *
+ * @example
+ * const orderDetails = {
+ *   id: 12345,
+ *   customer_name: 'John Doe',
+ *   total: 100.50,
+ *   location_id: 101
+ * };
+ * const dbConnection = // ... establish database connection
+ *
+ * await orderRegistration(orderDetails, dbConnection);
+ * console.log('Order registered successfully.');
+ */
+
 const orderRegistration = async (ordertype: orderType, db: any) => {
   const { id, customer_name, total, location_id } = ordertype;
   await db.query(registerOrder(+id, customer_name, total, +location_id));
 };
+
+/**
+ * Registers order items from a given order in the database.
+ *
+ * This function registers order items by inserting product details into the database
+ * for a specific order item. It iterates through the items in the cart and registers each item.
+ *
+ * @param {orderItemsType} ordertype - An object containing order item details including order_item_id, order_id, and cart.
+ * @param {any} db - The database connection or client used for querying.
+ * @returns {Promise<boolean>} A Promise that resolves to a boolean indicating whether the order items were successfully registered.
+ *
+ * @throws {Error} If there is an error during order item registration.
+ *
+ * @example
+ * const orderItemDetails = {
+ *   order_item_id: 123,
+ *   order_id: 456,
+ *   cart: [
+ *     { id: 1001, quantity: 2 },
+ *     { id: 2002, quantity: 3 }
+ *   ]
+ * };
+ * const dbConnection = // ... establish database connection
+ *
+ * const isRegistered = await orderItemRegistration(orderItemDetails, dbConnection);
+ * console.log('Order items registered:', isRegistered); // true if registered, false otherwise
+ */
 
 const orderItemRegistration = async (ordertype: orderItemsType, db: any) => {
   const order_item_id = ordertype.order_item_id;
@@ -95,6 +209,18 @@ const orderItemRegistration = async (ordertype: orderItemsType, db: any) => {
   }
 };
 
+/**
+ * Generates a random 5-digit order ID.
+ *
+ * This function generates a random 5-digit order ID using numeric characters.
+ *
+ * @returns {number} A randomly generated 5-digit order ID.
+ *
+ * @example
+ * const orderId = generateOrderID();
+ * console.log('Generated Order ID:', orderId); // e.g., 47382
+ */
+
 const generateOrderID = (): number => {
   const digits = '0123456789';
   let id = '';
@@ -106,6 +232,25 @@ const generateOrderID = (): number => {
 
   return Number(id);
 };
+
+/**
+ * Calculates the total order amount based on items in the cart.
+ *
+ * This function calculates the total order amount by iterating through the items in the cart.
+ * It multiplies the price of each item by its quantity and sums up the individual item totals.
+ *
+ * @param {cart[]} cart - An array of cart items containing item details including price and quantity.
+ * @returns {number} The total order amount based on the items in the cart.
+ *
+ * @example
+ * const cartItems = [
+ *   { name: 'Product A', price: 10, quantity: 2 },
+ *   { name: 'Product B', price: 20, quantity: 3 }
+ * ];
+ *
+ * const totalAmount = calculateOrderTotal(cartItems);
+ * console.log('Total Order Amount:', totalAmount); // e.g., 80 (10*2 + 20*3)
+ */
 
 const calculateOrderTotal = (cart: cart[]): number => {
   let orderTotal = 0;
